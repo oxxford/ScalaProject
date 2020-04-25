@@ -1,7 +1,6 @@
-import Sex.{Female, Male}
+package DataAnalysis
 
-import scala.collection.immutable.HashMap
-import scala.collection.mutable
+import DataAnalysis.Sex.{Female, Male}
 
 sealed trait Sex
 

@@ -1,4 +1,4 @@
-name := "proj"
+name := "predictive analytics"
 
 version := "0.1"
 
