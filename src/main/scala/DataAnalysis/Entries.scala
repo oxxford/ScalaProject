@@ -26,9 +26,10 @@ object UserEntry {
             case "2" => Option(Female)
             case _ => Option(NonBinary)
           }
-          userAge <- age match {
-            case value if value.toInt > 0 => value.toIntOption
-            case _ => Option(-1)
+          userAge <- age.toIntOption match {
+            case value if value.get > 0 => value
+            case value if value.get <= 0 => Option(-1)
+            case None => None
           }
           userCity <- city.head.toIntOption
         } yield UserEntry(userId, userSex, userAge, userCity)
@@ -46,14 +47,8 @@ object HistoryEntry {
     line match {
       case hour +: cpm +: publisher +: userId =>
         for {
-          historyHour <- hour match {
-            case value if (value.toInt <= 23 && value.toInt >= 0) => value.toIntOption
-            case _ => None
-          }
-          historyCpm <- cpm match {
-            case value if value.toDouble >= 0 => value.toDoubleOption
-            case _ => None
-          }
+          historyHour <- hour.toIntOption.filter(_ > 0)
+          historyCpm <- cpm.toDoubleOption.filter(_ >= 0)
           historyPublisher <- publisher.toIntOption
           historyUserId <- userId.head.toIntOption
         } yield HistoryEntry(historyHour, historyCpm, historyPublisher, historyUserId)
