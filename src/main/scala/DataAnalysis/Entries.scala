@@ -1,12 +1,13 @@
 package DataAnalysis
 
-import DataAnalysis.Sex.{Female, Male}
+import DataAnalysis.Sex.{Female, Male, NonBinary}
 
 sealed trait Sex
 
 object Sex {
   case object Male extends Sex
   case object Female extends Sex
+  case object NonBinary extends Sex
 }
 
 
@@ -23,9 +24,12 @@ object UserEntry {
           userSex <- sex match {
             case "1" => Option(Male)
             case "2" => Option(Female)
-            case _ => None
+            case _ => Option(NonBinary)
           }
-          userAge <- age.toIntOption
+          userAge <- age match {
+            case value if value.toInt > 0 => value.toIntOption
+            case _ => Option(-1)
+          }
           userCity <- city.head.toIntOption
         } yield UserEntry(userId, userSex, userAge, userCity)
       case _ => None
@@ -33,8 +37,8 @@ object UserEntry {
   }
 }
 
-final case class HistoryEntry(hour: Int, cpm: Double, publisher: Int, userId: Int) {
-  def toVector: Vector[String] = Vector(hour.toString, cpm.toString, publisher.toString, userId.toString)
+final case class HistoryEntry(hour: Int, cpm: Double, publisherId: Int, userId: Int) {
+  def toVector: Vector[String] = Vector(hour.toString, cpm.toString, publisherId.toString, userId.toString)
 }
 
 object HistoryEntry {
@@ -42,11 +46,16 @@ object HistoryEntry {
     line match {
       case hour +: cpm +: publisher +: userId =>
         for {
-          historyHour <- hour.toIntOption
-          historyCpm <- cpm.toDoubleOption
+          historyHour <- hour match {
+            case value if (value.toInt <= 23 && value.toInt >= 0) => value.toIntOption
+            case _ => None
+          }
+          historyCpm <- cpm match {
+            case value if value.toDouble >= 0 => value.toDoubleOption
+            case _ => None
+          }
           historyPublisher <- publisher.toIntOption
           historyUserId <- userId.head.toIntOption
-
         } yield HistoryEntry(historyHour, historyCpm, historyPublisher, historyUserId)
       case _ => None
     }
