@@ -2,12 +2,11 @@ import java.nio.file.Paths
 
 import DataAnalysis.{Analyzer, HistoryEntry, UserEntry}
 import akka.actor.ActorSystem
-import akka.http.impl.engine.server.GracefulTerminatorStage
-import akka.stream.ActorMaterializer
 import akka.stream.alpakka.csv.scaladsl._
+import scala.concurrent.duration._
 import akka.stream.scaladsl._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, ExecutionContext}
 import scala.util.{Failure, Success}
 
 object Main {
@@ -21,8 +20,6 @@ object Main {
       .map(i => UserEntry.fromLine(i.map(_.utf8String)))
       .collect { case Some(v) => v }
 
-    //пока не пригодилось
-    //val userMapFuture = userSource.runFold[immutable.HashMap[Int, UserEntry]](new immutable.HashMap[Int, UserEntry]())((map, entry) => map + (entry.userId -> entry))
     val amountOfUsers = Analyzer.getSize(userSource)
 
     amountOfUsers onComplete {
@@ -54,7 +51,7 @@ object Main {
 
     histStringFuture onComplete {
       case Success(value) =>
-        println(value)
+        println("Text histogram of advertisement amount seen by users:\n" + value)
         actors.terminate()
       case Failure(exception) =>
         println(exception)

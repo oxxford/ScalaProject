@@ -35,25 +35,26 @@ object Analyzer{
       )
       .runWith(Sink.seq)
       .map { lenSeq =>
-        val mx = lenSeq.max.toDouble
+        val mx = lenSeq.max.toDouble + 1
         val mn = lenSeq.min.toDouble
-        "Text histogram of advertisement amount seen by users:\n" +
+        val binSize = (mx - mn) / numBins
           lenSeq
-            .map(x => (((x.toDouble - mn) / (mx - mn)) * numBins).floor.toInt)
+            .map(x => ((x.toDouble - mn) / binSize).floor.toInt)
             .groupBy {
               // for readability
               binNumber: Int => binNumber
             }
             .map(x => (x._1, x._2.size) match {
               // for readability
-              case (binNumber: Int, binSize: Int) => binNumber -> binSize
+              case (binNumber: Int, binSize: Int) =>
+                binNumber -> binSize
             })
             .toSeq
             .sortBy(x => x._1 match {
               // for readability
               case binNumber: Int => binNumber
             })
-            .map(x => "From " + (x._1.toDouble / 20 * (mx - mn)).round.toString + " => " + x._2.toString)
+            .map(x => "From " + (x._1.toDouble * binSize + mn).round.toString + " => " + x._2.toString)
             .mkString("\n")
       }
   }
