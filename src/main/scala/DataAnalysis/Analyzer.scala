@@ -5,15 +5,12 @@ import akka.stream.scaladsl.{Sink, Source}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object Analyzer {
-  implicit val actors: ActorSystem = ActorSystem()
-  implicit val executionContext: ExecutionContext = actors.dispatcher
-
-  def getAmountOfUsers(userSource: Source[UserEntry, Any]): Future[Int] = {
+object Analyzer{
+  def getSize(userSource: Source[_, Any])(implicit actorsSystem: ActorSystem): Future[Int] = {
     userSource.runWith(Sink.fold(0)((sum, _) => sum + 1))
   }
 
-  def getStringHistFuture(historySource: Source[HistoryEntry, Any], maxUsers: Int, numBins: Int): Future[String] = {
+  def getUserFrequency(historySource: Source[HistoryEntry, Any], maxUsers: Int): Source[(Int, Int), Any] = {
     historySource
       .groupBy(maxUsers, _.userId)
       .map(_ -> 1)
@@ -25,7 +22,12 @@ object Analyzer {
         }
       )
       .mergeSubstreams
-      .map(
+      .map(pair => (pair._1.userId, pair._2))
+  }
+
+  def getStringHistFuture(source: Source[(Int, Int), Any], numBins: Int)
+                         (implicit actorsSystem: ActorSystem, context: ExecutionContext): Future[String] = {
+    source.map(
         pair => pair._2 match {
           // for readability
           case amountOfHistoryEntriesForUser: Int => amountOfHistoryEntriesForUser
@@ -54,22 +56,5 @@ object Analyzer {
             .map(x => "From " + (x._1.toDouble / 20 * (mx - mn)).round.toString + " => " + x._2.toString)
             .mkString("\n")
       }
-/*
-    val histString_v1 = lenSeqFuture onComplete {
-      case Success(a) =>
-        // можно настроить кол-во бинов
-        val numBins = 20
-        val mx = a.max.toDouble
-        val mn = a.min.toDouble
-        val hist = a
-          .map(x => (((x.toDouble - mn) / (mx - mn)) * numBins).floor.toInt)
-          .groupBy(x => x)
-          .map(x => x._1 -> x._2.size)
-          .toSeq
-          .sortBy(x => x._1)
-          .map(x => "From " + (x._1.toDouble / 20 * (mx - mn)).round.toString + " => " + x._2.toString)
-        print("Text histogram of advertisement amount seen by users:\n" + hist.mkString("\n"))
-    }
-*/
   }
 }
